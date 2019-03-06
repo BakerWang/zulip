@@ -1,7 +1,11 @@
-#!/usr/bin/env python
 import time
 
+if False:
+    # See https://zulip.readthedocs.io/en/latest/testing/mypy.html#mypy-in-production-scripts
+    from typing import Tuple
+
 def nagios_from_file(results_file):
+    # type: (str) -> Tuple[int, str]
     """Returns a nagios-appropriate string and return code obtained by
     parsing the desired file on disk. The file on disk should be of format
 
@@ -31,4 +35,3 @@ def nagios_from_file(results_file):
             data = pieces[3]
 
     return (ret, "%s: %s" % (state, data))
-

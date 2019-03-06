@@ -654,4 +654,34 @@ work_mem = <%= scope["zulip::postgres_appdb_tuned::work_mem"] %>MB
 shared_buffers = <%= scope["zulip::postgres_appdb_tuned::shared_buffers"] %>MB
 wal_buffers = 4MB
 checkpoint_completion_target = 0.7
-random_page_cost = 2.0
+<% if @random_page_cost != '' -%>
+random_page_cost = <%= @random_page_cost %>
+<% end -%>
+<% if @effective_io_concurrency != '' -%>
+effective_io_concurrency = <%= @effective_io_concurrency %>
+<% end -%>
+
+<% if @listen_addresses != '' -%>
+listen_addresses = <%= @listen_addresses %>
+<% end -%>
+
+<% if @replication != '' -%>
+# Master replication settings (ignored on standby)
+wal_level = hot_standby
+max_wal_senders = 5
+archive_mode = on
+archive_command = '/usr/local/bin/env-wal-e wal-push %p'
+
+# Standby replication settings (ignored on master)
+hot_standby = on
+<% end -%>
+
+<% if @ssl_cert_file != '' -%>
+ssl_cert_file = '<%= @ssl_cert_file %>'		# (change requires restart)
+<% end -%>
+<% if @ssl_key_file != '' -%>
+ssl_key_file = '<%= @ssl_key_file %>'		# (change requires restart)
+<% end -%>
+<% if @ssl_ca_file != '' -%>
+ssl_ca_file = '<%= @ssl_ca_file %>'		# (change requires restart)
+<% end -%>

@@ -4,13 +4,13 @@ var exports = {};
 
 exports.render = function (name, arg) {
     if (Handlebars.templates === undefined) {
-        throw "Cannot find compiled templates!";
+        throw new Error("Cannot find compiled templates!");
     }
     if (Handlebars.templates[name] === undefined) {
-        throw "Cannot find a template with this name: " + name
-              + ". If you are developing a new feature, this likely"
+        throw new Error("Cannot find a template with this name: " + name
+              + ". If you are developing a new feature, this likely "
               + "means you need to add the file static/templates/"
-              + name + ".handlerbars";
+              + name + ".handlebars");
     }
 
     // The templates should be compiled into compiled.js.  In
@@ -43,7 +43,7 @@ Handlebars.registerHelper('partial', function (template_name) {
 });
 
 Handlebars.registerHelper('plural', function (condition, one, other) {
-    return (condition === 1) ? one : other;
+    return condition === 1 ? one : other;
 });
 
 Handlebars.registerHelper('if_and', function () {
@@ -54,12 +54,33 @@ Handlebars.registerHelper('if_and', function () {
     //     {{/if_and}}
     var options = arguments[arguments.length - 1];
     var i;
-    for (i = 0; i < arguments.length - 1; i++) {
+    for (i = 0; i < arguments.length - 1; i += 1) {
         if (!arguments[i]) {
             return options.inverse(this);
         }
     }
     return options.fn(this);
+});
+
+Handlebars.registerHelper('unless_a_not_b', function () {
+    // Execute the conditional code if at least one condition is false.
+    // Example usage:
+    //     {{#unless_a_not_b cond1 cond2}}
+    //         <p>a is false or b is true</p>
+    //     {{/unless_a_not_b}}
+    var options = arguments[arguments.length - 1];
+    if (arguments[0] && !arguments[1]) {
+        return options.inverse(this);
+    }
+    return options.fn(this);
+});
+
+Handlebars.registerHelper('if_not_a_or_b_and_not_c', function () {
+    var options = arguments[arguments.length - 1];
+    if (arguments[0] === false || arguments[1] === true && arguments[2] === false) {
+        return options.fn(this);
+    }
+    return options.inverse(this);
 });
 
 Handlebars.registerHelper('if_or', function () {
@@ -70,11 +91,18 @@ Handlebars.registerHelper('if_or', function () {
     //     {{/if_or}}
     var options = arguments[arguments.length - 1];
     var i;
-    for (i = 0; i < arguments.length - 1; i++) {
+    for (i = 0; i < arguments.length - 1; i += 1) {
         if (arguments[i]) {
             return options.fn(this);
 
         }
+    }
+    return options.inverse(this);
+});
+
+Handlebars.registerHelper('is_false', function (variable, options) {
+    if (variable === false) {
+        return options.fn(this);
     }
     return options.inverse(this);
 });
@@ -112,3 +140,4 @@ return exports;
 if (typeof module !== 'undefined') {
     module.exports = templates;
 }
+window.templates = templates;

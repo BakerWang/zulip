@@ -1,26 +1,28 @@
-from __future__ import absolute_import
 
 from typing import Any
 
-from argparse import ArgumentParser
-from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
-from django.core.mail import send_mail, BadHeaderError
+from django.core.mail import mail_admins, mail_managers, send_mail
+from django.core.management import CommandError
+from django.core.management.commands import sendtestemail
 
-class Command(BaseCommand):
-    help = """Send email to specified email address."""
+from zerver.lib.send_email import FromAddress
 
-    def add_arguments(self, parser):
-        # type: (ArgumentParser) -> None
-        parser.add_argument('to', metavar='<to>', type=str,
-                            help="email of user to send the email")
+class Command(sendtestemail.Command):
+    def handle(self, *args: Any, **kwargs: str) -> None:
+        if settings.WARN_NO_EMAIL:
+            raise CommandError("Outgoing email not yet configured, see\n  "
+                               "https://zulip.readthedocs.io/en/latest/production/email.html")
+        message = ("Success!  If you receive this message, you've "
+                   "successfully configured sending email from your "
+                   "Zulip server.  Remember that you need to restart "
+                   "the Zulip server with /home/zulip/deployments/current/scripts/restart-server "
+                   "after changing the settings in /etc/zulip before your changes will take effect.")
+        send_mail("Zulip email test", message, FromAddress.SUPPORT, kwargs['email'])
+        send_mail("Zulip noreply email test", message, FromAddress.tokenized_no_reply_address(), kwargs['email'])
 
-    def handle(self, *args, **options):
-        # type: (*Any, **str) -> None
-        subject = "Zulip Test email"
-        message = "Success!  If you receive this message, you've successfully " + \
-            "configured sending email from your Zulip server."
-        sender = settings.DEFAULT_FROM_EMAIL
-        to = options['to']
+        if kwargs['managers']:
+            mail_managers("Zulip manager email test", "This email was sent to the site managers.")
 
-        send_mail(subject, message, sender, [to])
+        if kwargs['admins']:
+            mail_admins("Zulip admins email test", "This email was sent to the site admins.")

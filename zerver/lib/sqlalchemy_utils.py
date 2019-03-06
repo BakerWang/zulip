@@ -1,18 +1,21 @@
+from typing import Optional, Any
+
 from django.db import connection
+from zerver.lib.db import TimeTrackingConnection
 
 import sqlalchemy
 
 # This is a Pool that doesn't close connections.  Therefore it can be used with
 # existing Django database connections.
 class NonClosingPool(sqlalchemy.pool.NullPool):
-    def status(self):
+    def status(self) -> str:
         return "NonClosingPool"
 
-    def _do_return_conn(self, conn):
+    def _do_return_conn(self, conn: sqlalchemy.engine.base.Connection) -> None:
         pass
 
-    def recreate(self):
-        return self.__class__(creator=self._creator, # type: ignore # __class__
+    def recreate(self) -> 'NonClosingPool':
+        return self.__class__(creator=self._creator,
                               recycle=self._recycle,
                               use_threadlocal=self._use_threadlocal,
                               reset_on_return=self._reset_on_return,
@@ -20,11 +23,11 @@ class NonClosingPool(sqlalchemy.pool.NullPool):
                               logging_name=self._orig_logging_name,
                               _dispatch=self.dispatch)
 
-sqlalchemy_engine = None
-def get_sqlalchemy_connection():
+sqlalchemy_engine = None  # type: Optional[Any]
+def get_sqlalchemy_connection() -> sqlalchemy.engine.base.Connection:
     global sqlalchemy_engine
     if sqlalchemy_engine is None:
-        def get_dj_conn():
+        def get_dj_conn() -> TimeTrackingConnection:
             connection.ensure_connection()
             return connection.connection
         sqlalchemy_engine = sqlalchemy.create_engine('postgresql://',
